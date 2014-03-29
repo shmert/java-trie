@@ -395,7 +395,7 @@
   </component>
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/javascript" vcs="svn" />
+    <mapping directory="$PROJECT_DIR$/javascript" vcs="Git" />
   </component>
   <component name="com.sixrr.metrics.MetricsReloaded">
     <option name="selectedProfile" value="" />
