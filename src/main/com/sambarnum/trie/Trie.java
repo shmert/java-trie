@@ -3,10 +3,11 @@ package com.sambarnum.trie;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author sbarnum
@@ -95,6 +96,58 @@ public class Trie implements Serializable {
 	public void compress() {
 		new Compressor().compress(this);
 	}
+
+	public byte[] toByteArray() throws IOException {
+		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		final DataOutputStream data = new DataOutputStream(baos);
+		final IdentityHashMap<Node, Integer> headerIndexByNode = new IdentityHashMap<>();
+		_populateMap(this.getRoot(), headerIndexByNode, 0);
+		final ArrayList<Map.Entry<Trie.Node, Integer>> entries = (ArrayList<Map.Entry<Trie.Node, Integer>>) new ArrayList<>(headerIndexByNode.entrySet());
+		Collections.sort(entries, new Comparator<Map.Entry<Trie.Node, Integer>>() {
+			@Override
+			public int compare(final Map.Entry<Trie.Node, Integer> o1, final Map.Entry<Trie.Node, Integer> o2) {
+				return o1.getValue().compareTo(o2.getValue());
+			}
+		});
+		for (Map.Entry<Trie.Node, Integer> entry : entries) {
+			writeInt(data, entry.getKey().bitSet);
+			for (Trie.Node child : entry.getKey().getChildren()) {
+				writeInt(data, headerIndexByNode.get(child));
+			}
+		}
+		//_dump(entries);
+		data.close();
+		return baos.toByteArray();
+	}
+
+	static void writeInt(final DataOutputStream data, final int v) throws IOException {
+		data.write((0xff & v));
+		data.write(0xff & v >> 8);
+		data.write(0xff & v >> 16);
+		data.write(0xff & v >> 24);
+	}
+
+
+
+	/**
+	 * Breadth-first traversal of nodes, assigning them a spot to write things out
+	 * @param node
+	 * @param headerIndexByNode
+	 * @param nextHeaderIndex
+	 * @return
+	 */
+	private int _populateMap(final Trie.Node node, final IdentityHashMap<Trie.Node, Integer> headerIndexByNode, int nextHeaderIndex) {
+		if (!headerIndexByNode.containsKey(node)) {
+			headerIndexByNode.put(node, nextHeaderIndex);
+			nextHeaderIndex += 1 + node.getChildCount();
+			for (Trie.Node child : node.getChildren()) {
+				nextHeaderIndex = _populateMap(child, headerIndexByNode, nextHeaderIndex);
+			}
+		}
+		return nextHeaderIndex;
+	}
+
+
 
 	static class Node {
 		/**

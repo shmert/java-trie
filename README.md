@@ -4,7 +4,7 @@ java-trie
 There are two main components to this project.
 
 Java Implementation
--------------------
+===================
 A Java [Trie][trie] / [DAWG][dawg] implementation, focusing on memory efficiency for ASCII trees (letters a-z, lowercase).
 
 This implementation uses a sparse array to store children, and an int bit set to indicate which children a given node has, and whether a node is a valid end-of-word.
@@ -13,7 +13,8 @@ It includes a <code>compress()</code> function which greatly reduces the Trie's 
 
 The Java implementation includes a way to dump the Trie structure to an efficient binary format. You can then load this binary file into a JavaScript array, and have fast and low-memory Trie lookup operations on the client.
 
-** Creating a Trie in Java **
+Creating a Trie in Java
+-----------------------
 
 	trie = new MemoryEfficientTrie(Arrays.asList("cat", "zap"));
 	trie.add("bat");
@@ -22,7 +23,7 @@ The Java implementation includes a way to dump the Trie structure to an efficien
 	trie.containsWord("cap"); // false
 
 JavaScript Implementation
--------------------------
+=========================
 
 The JavaScript implementation loads a pre-generated binary file containing an optimal representation of the Trie data.
 
@@ -45,7 +46,7 @@ The JavaScript implementation loads a pre-generated binary file containing an op
 	oReq.send(null);
 
 Binary File Format
-------------------
+==================
 The binary format is an array of int objects.
 
 Each node in the Trie is written to the array, first with the bit set value, followed by zero or more reference addresses for the node's children.

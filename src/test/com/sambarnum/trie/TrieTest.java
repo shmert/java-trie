@@ -16,7 +16,6 @@ public class TrieTest extends TestCase {
 
 	private Trie trie;
 	private static final Iterable<String> SAMPLE_WORDS = Arrays.asList("zap", "bingo", "bing", "ding", "dingo", "binding", "bonding");
-	private int intsWritten = 0;
 
 	@Override
 	protected void setUp() throws Exception {
@@ -107,6 +106,25 @@ public class TrieTest extends TestCase {
 		return result;
 	}
 
+
+	public void testDemoCompress() throws Exception {
+		Trie demoTrie = new Trie();
+		demoTrie.add("bat");
+		demoTrie.add("cat");
+		demoTrie.add("dog");
+		demoTrie.add("frog");
+		demoTrie.compress();
+		byte[] bytes = demoTrie.toByteArray();
+
+		final String encoded = new BASE64Encoder().encode(bytes);
+		final String path = "/Users/sbarnum/htdocs/test/demo_trie.data";
+		final FileOutputStream fileOutputStream = new FileOutputStream(path);
+		System.out.println("Wrote " + encoded.length() + " chars to " + path);
+		fileOutputStream.write(bytes);
+		fileOutputStream.close();
+
+	}
+
 	public void testCompress() throws Exception {
 		final List<String> strings = trie.toList(null);
 		final List<String> words = Arrays.asList(
@@ -170,74 +188,14 @@ public class TrieTest extends TestCase {
 	}
 
 	private void writeTrieToPath() throws IOException {
-		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		final DataOutputStream data = new DataOutputStream(baos);
-		//writeInt(data, 0);
-		//writeInt(data, 1);
-		//writeInt(data, 11);
-		//writeInt(data, 1<<31);
-		final IdentityHashMap<Trie.Node, Integer> headerIndexByNode = new IdentityHashMap<>();
-		_populateMap(trie.getRoot(), headerIndexByNode, 0);
-		final ArrayList<Map.Entry<Trie.Node, Integer>> entries = (ArrayList<Map.Entry<Trie.Node, Integer>>) new ArrayList<>(headerIndexByNode.entrySet());
-		Collections.sort(entries, new Comparator<Map.Entry<Trie.Node, Integer>>() {
-			@Override
-			public int compare(final Map.Entry<Trie.Node, Integer> o1, final Map.Entry<Trie.Node, Integer> o2) {
-				return o1.getValue().compareTo(o2.getValue());
-			}
-		});
-		for (Map.Entry<Trie.Node, Integer> entry : entries) {
-			assertEquals(entry.getValue().intValue(), intsWritten);
-			writeInt(data, entry.getKey().bitSet);
-			for (Trie.Node child : entry.getKey().getChildren()) {
-				writeInt(data, headerIndexByNode.get(child));
-			}
-		}
-		//_dump(entries);
-		data.close();
-		final byte[] bytes = baos.toByteArray();
+		Trie trieToWrite = trie;
+		final byte[] bytes = trieToWrite.toByteArray();
 		final String encoded = new BASE64Encoder().encode(bytes);
 		final String path = "/Users/sbarnum/htdocs/test/trie.data";
 		final FileOutputStream fileOutputStream = new FileOutputStream(path);
 		System.out.println("Wrote " + encoded.length() + " chars to " + path);
-		fileOutputStream.write(baos.toByteArray());
+		fileOutputStream.write(bytes);
 		fileOutputStream.close();
-	}
-
-	/**
-	 * Breadth-first traversal of nodes, assigning them a spot to write things out
-	 * @param node
-	 * @param headerIndexByNode
-	 * @param nextHeaderIndex
-	 * @return
-	 */
-	private int _populateMap(final Trie.Node node, final IdentityHashMap<Trie.Node, Integer> headerIndexByNode, int nextHeaderIndex) {
-		if (!headerIndexByNode.containsKey(node)) {
-			headerIndexByNode.put(node, nextHeaderIndex);
-			nextHeaderIndex += 1 + node.getChildCount();
-			for (Trie.Node child : node.getChildren()) {
-				nextHeaderIndex = _populateMap(child, headerIndexByNode, nextHeaderIndex);
-			}
-		}
-		return nextHeaderIndex;
-	}
-
-	private void _dump(final Trie.Node node, final DataOutputStream data, final IdentityHashMap<Trie.Node, Integer> headerIndexByNode) throws IOException {
-		int header = node.bitSet;
-		writeInt(data, header);
-		if (node.children != null) {
-			for (Trie.Node child : node.children) {
-				writeInt(data, headerIndexByNode.get(child));
-				_dump(child, data, headerIndexByNode);
-			}
-		}
-	}
-
-	private void writeInt(final DataOutputStream data, final int v) throws IOException {
-		data.write((0xff & v));
-		data.write(0xff & v >> 8);
-		data.write(0xff & v >> 16);
-		data.write(0xff & v >> 24);
-		intsWritten++;
 	}
 
 	Trie wordsWithFriendsTrie() throws IOException {
