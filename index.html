@@ -1,0 +1,221 @@
+<!doctype html>
+<html>
+<head>
+    <title>SBTrie</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular.min.js"/>
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+
+    <script>
+        function DemoCtrl($scope) {
+            $scope.prefix = '';
+            $scope.dictionaryOptions = [
+                {name: 'Animal List', url: 'animals.dat'},
+                {name: 'Simple Words', url: 'simple_words.dat'},
+                {name: 'Words With Friends', url: 'words_with_friends.dat'}
+            ];
+            $scope.dictionary = $scope.dictionaryOptions[0];
+        }
+    </script>
+
+    <style>
+        table {
+            border-collapse: collapse;
+        }
+        table td {
+            font-family:monospace;
+            padding-right:15px;
+            border:1px solid silver;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>SBTrie Overview</h1>
+
+    <p>SBTrie is an efficient, native-array-based JavaScript trie implementation. The project includes Java-based tools to build your own native arrays from word lists.</p>
+
+    <h3>How it Works</h3>
+
+    <p>Consider the following dictionary:</p>
+    <ul>
+        <li>BAT</li>
+        <li>CAT</li>
+        <li>DOG</li>
+        <li>FROG</li>
+    </ul>
+
+    <!--
+    <p>A trie built from this will look like this:
+    </p>
+
+    [trie tree]
+    -->
+
+    <p>To save memory, we can compact the trie into a <a href="http://en.wikipedia.org/wiki/Directed_acyclic_word_graph">DAWG</a> by combining shared suffixes.
+
+    <!--
+        Now our data structure looks like this:</p>
+
+    [dawg tree with combined suffixes]
+    -->
+
+    <p>This is more efficient, but a large word list can still take up a lot of memory. We can convert this structure to a flattened array.</p>
+    <h4>Array Structure</h4>
+
+    <p> Each element in the data array is 32 bits. SBTrie uses a <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Typed_arrays">typed array</a> for speed and memory-saving purposes.
+    </p>
+
+    <p>The first array is an integer version number corresponding to which version of the Java tool created the array.</p>
+
+    <p>
+        The next element is a header bit set for the root of the trie. Header ints identify whether a node is a valid end-of-word, and which children a given node has.
+        The end-of-word bit is the left-most bit in the integer. The children are represented in the right-most bits.
+    </p>
+
+    <p>After each header element come child pointers. There are as many child pointers as the header node has children. Each pointer is an integer address to another element in the array.</p>
+
+    <p>This is enough to represent the entirety of our trie. Here's what our simple animal list might look like:</p>
+
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>Index</th>
+            <th>Integer</th>
+            <th>32 Bits</th>
+            <th>Notes</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>0</td>
+            <td>1</td>
+            <td>00000000000000000000000000000001</td>
+            <td>Version 1 of SBTrie data structure</td>
+        </tr>
+        <tr>
+            <td>1</td>
+            <td></td>
+            <td>$_____ZYXWVUTSRQPONMLKJIHGFEDCBA<br/>00000000000000000000000000101110
+            </td>
+            <td>Root node has children 'B','C','D','F', and is not a valid end-of-word ($)</td>
+        </tr>
+        <tr>
+            <td>2</td>
+            <td>6</td>
+            <td></td>
+            <td>Array index of the 'B' node</td>
+        </tr>
+        <tr>
+            <td>3</td>
+            <td></td>
+            <td></td>
+            <td>Array index of the 'C' node</td>
+        </tr>
+        <tr>
+            <td>4</td>
+            <td></td>
+            <td></td>
+            <td>Array index of the 'D' node</td>
+        </tr>
+        <tr>
+            <td>5</td>
+            <td></td>
+            <td></td>
+            <td>Array index of the 'F' node</td>
+        </tr>
+        <tr>
+            <td>6</td>
+            <td></td>
+            <td>$_____ZYXWVUTSRQPONMLKJIHGFEDCBA<br/>00000000000000000000000000000001
+            </td>
+            <td>'B' node has child 'A', is not a valid end-of-word ($)</td>
+        </tr>
+        <tr>
+            <td>7</td>
+            <td>8</td>
+            <td></td>
+            <td>Array index of the 'A' child node</td>
+        </tr>
+        <tr>
+            <td>8</td>
+            <td></td>
+            <td>$_____ZYXWVUTSRQPONMLKJIHGFEDCBA<br/>
+                10000000000010000000000000000000
+            </td>
+            <td>'BA' node has child 'T', is not a valid end-of-word ($)</td>
+        </tr>
+        <tr>
+            <td>9</td>
+            <td></td>
+            <td>$_____ZYXWVUTSRQPONMLKJIHGFEDCBA<br/>
+                10000000000010000000000000000000
+            </td>
+            <td>'BA' node has child 'T', is not a valid end-of-word ($)</td>
+        </tr>
+        </tbody>
+
+    </table>
+
+    <h2>Demo</h2>
+    try out the <a href="demo.html">Live Demo</a> to explore the Words With Friends dictionary.
+
+    <!--
+    <div class="form-group">
+        <label for="dictionary">Dictionary to use</label>
+        <select type="text" class="form-control" id="dictionary" ng-model="dictionary" ng-options="d.name for d in dictionaryOptions"></select>
+    </div>
+    <div class="form-group">
+        <input placeholder="type a word" ng-model="prefix" class="form-control"/>
+    </div>
+
+    <div id="prefixViz"></div>
+
+    <script>
+        var vis = d3.select("#viz").append("svg:svg")
+              .attr("width", 400)
+              .attr("height", 300)
+              .append("svg:g");
+
+        var tree = d3.layout.tree()
+            .size([300,150]);
+
+        var diagonal = d3.svg.diagonal()
+              // change x and y (for the left to right tree)
+              .projection(function(d) { return [d.y, d.x]; });
+
+        // Preparing the data for the tree layout, convert data into an array of nodes
+        var nodes = tree.nodes(treeData);
+        // Create an array with all the links
+        var links = tree.links(nodes);
+
+        console.log(treeData);
+        console.log(nodes);
+        console.log(links);
+
+        var link = vis.selectAll("pathlink")
+        .data(links)
+        .enter().append("svg:path")
+        .attr("class", "link")
+        .attr("d", diagonal);
+
+        var node = vis.selectAll("g.node")
+        .data(nodes)
+        .enter().append("svg:g")
+        .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; });
+
+        // Add the dot at every node
+        node.append("svg:circle")
+        .attr("r", 3.5);
+
+        // place the name atribute left or right depending if children
+        node.append("svg:text")
+        .attr("dx", function(d) { return d.children ? -8 : 8; })
+        .attr("dy", 3)
+        .attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
+        .text(function(d) { return d.name; });
+    </script>
+    -->
+</div>
+
+</body>
+</html>
