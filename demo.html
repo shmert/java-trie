@@ -30,12 +30,13 @@
 
 </style>
 <body>
+<p>Type a word or click on nodes</p>
 <form onsubmit="return go();">
     <input id="word" value=""/>
     <button type="submit">Update</button>
 </form>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 <script src="http://d3js.org/d3.v3.min.js"></script>
-<script src="trie.js"></script>
 <script src="https://rawgit.com/shmert/java-trie/master/javascript/trie.js"></script>
 <script>
 
@@ -234,6 +235,7 @@
         if (charOffset < text.length) {
             var letter = text.charAt(charOffset);
             var childNode = childNodeWithName(node, letter);
+	    if (!childNode) return;
             childNode.children = nodesFromLetters(text.substring(0, charOffset + 1), trie.children(text.substr(0, charOffset + 1)));
             pushChildren(text, charOffset + 1, childNode);
             if (charOffset + 1 == text.length && childNode.children.length == 1) {
@@ -249,7 +251,9 @@
                 return parentNode.children[i];
             }
         }
-        throw 'No such child ' + name + ' in ' + parentNode;
+        console.log('No such child ' + name + ' in ' + parentNode);
     }
 
+
+$("#word").on("change paste keyup", function() {go(root);});
 </script>
