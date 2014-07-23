@@ -3,7 +3,7 @@ function Trie(array) {
 	function indexOf(word, charOffset, parentIndex) {
 		if (charOffset == word.length) return parentIndex;
 		var indexOff = indexOffset(array[parentIndex], bitFor(word.charCodeAt(charOffset)));
-		if (indexOffset == -1) return -1;
+		if (indexOffset == -1) return undefined;
 		return indexOf(word, charOffset + 1, array[parentIndex + 1 + indexOff]);
 	}
 
@@ -30,6 +30,28 @@ function Trie(array) {
 		return String.fromCharCode(bit+97);
 	}
 
+	function node(word, index) {
+		var header=array[index], _children;
+		return {
+			word:word,
+			letter:word.charAt(word.length-1),
+			isWord:(header & (1<<31)) != 0,
+			children:function() {
+				var i=0, offset=0;
+				if (!_children) {
+					_children = [];
+					for (i=0; i<26; i++) {
+						if ((header & (1 << i)) != 0) {
+							offset++;
+							_children.push(node(word + charFor(i), array[index+offset]));
+						}
+					}
+				}
+				return _children;
+			}
+		}
+	}
+
 	return {
 		/** Returns true if word exists in the dictionary, but not if word is only a prefix ot other valid words. */
 		containsWord: function (word) {
@@ -48,6 +70,10 @@ function Trie(array) {
 				}
 			}
 			return result;
+		},
+		node: function(word) {
+			var index = indexOf(word, 0, 0);
+			return index===undefined ? null : node(word, index);
 		}
 	}
 
