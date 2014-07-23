@@ -1,6 +1,8 @@
 java-trie
 =========
 
+Try the [demo](http://shmert.github.io/java-trie/demo.html), or read more about the [file format](http://shmert.github.io/java-trie/index.html).
+
 There are two main components to this project.
 
 Java Implementation
